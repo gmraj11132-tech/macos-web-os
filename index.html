@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>macOS Web OS</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/boot.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/desktop.css">
+    <link rel="stylesheet" href="css/menubar.css">
+    <link rel="stylesheet" href="css/dock.css">
+    <link rel="stylesheet" href="css/windows.css">
+    <link rel="stylesheet" href="css/apps.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/spotlight.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="css/controlcenter.css">
+    <link rel="stylesheet" href="css/launchpad.css">
+    <link rel="stylesheet" href="css/contextmenu.css">
+
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #os-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div id="os-container">
+    
+    <!-- 1. Boot Screen -->
+    <div id="boot-screen" class="screen">
+        <div class="apple-logo-container">
+            <svg viewBox="0 0 170 170" width="80" height="80">
+                <path fill="#ffffff" d="M150.37,130.25c-2.45,5.66-5.35,10.87-8.71,15.66c-4.58,6.53-8.33,11.05-11.22,13.56c-4.48,4.12-9.28,6.23-14.42,6.35c-3.69,0-8.14-1.05-13.32-3.18c-5.19-2.12-9.97-3.17-14.34-3.17c-4.58,0-9.49,1.05-14.74,3.17c-5.26,2.13-9.5,3.24-12.74,3.35c-5.11,0.22-10.15-2.06-15.1-6.85c-3.05-2.82-7-7.77-11.83-14.85C29.1,137.21,24.16,128.53,19.12,118.25C14.08,107.97,11.56,98.11,11.56,88.66c0-11.86,2.78-21.72,8.34-29.58c3.78-5.36,8.51-9.39,14.19-12.09c5.68-2.69,11.55-4.05,17.62-4.05c4.9,0,10.02,1.21,15.36,3.63c5.34,2.42,9.31,3.62,11.88,3.62c2.25,0,6.49-1.25,12.74-3.74c6.26-2.49,12.09-3.76,17.52-3.8c6.64-0.12,12.8,1.45,18.47,4.72c4.32,2.46,8.02,5.92,11.08,10.37c-9.15,5.55-13.62,13.12-13.43,22.7c0.18,7.96,3.28,14.65,9.27,20.08c3.27,2.94,7.18,5.04,11.75,6.29C155.07,113.62,153.25,122.25,150.37,130.25z M117.92,25.86c-0.22,6.01-2.58,11.66-7.07,16.94c-4.8,5.43-10.74,8.59-17.81,9.47c-0.34-5.69,1.75-11.39,6.26-17.07c2.97-3.7,6.86-6.68,11.69-8.91c4.83-2.22,9.52-3.13,14.07-2.7C125.13,24.4,121.7,25.43,117.92,25.86z"/>
+            </svg>
+        </div>
+        <div class="progress-container">
+            <div id="boot-progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- 2. Login Screen -->
+    <div id="login-screen" class="screen hidden">
+        <div class="login-container">
+            <div class="user-avatar" style="overflow: hidden; padding: 0;">
+                <img src="assets/profile.jpg" alt="Aryan Raj" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            </div>
+            <div class="user-name">Aryan Raj</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 8px;">Software Engineer & AI Developer</div>
+            <div class="password-container">
+                <input type="password" id="login-password" placeholder="Press Enter to Login" autofocus>
+                <button id="login-btn"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+            <div class="login-message" id="login-message"></div>
+        </div>
+        <div class="login-footer">
+            <div class="login-action"><i class="fa-solid fa-power-off"></i> Shut Down</div>
+            <div class="login-action"><i class="fa-solid fa-rotate-right"></i> Restart</div>
+            <div class="login-action"><i class="fa-solid fa-moon"></i> Sleep</div>
+        </div>
+    </div>
+
+    <!-- 3. Desktop -->
+    <div id="desktop-screen" class="screen hidden">
+        <div id="desktop-icons">
+            <div class="desktop-icon-item" onclick="window.openApp('about')">
+                <div class="desktop-icon-img bg-aryan"><img src="assets/profile.jpg" alt="Aryan Raj"></div>
+                <div class="desktop-icon-label">About Aryan Raj</div>
+            </div>
+            <div class="desktop-icon-item" onclick="window.openApp('github')">
+                <div class="desktop-icon-img bg-github"><i class="fa-brands fa-github"></i></div>
+                <div class="desktop-icon-label">GitHub</div>
+            </div>
+            <div class="desktop-icon-item" onclick="window.openApp('linkedin')">
+                <div class="desktop-icon-img bg-linkedin"><i class="fa-brands fa-linkedin-in"></i></div>
+                <div class="desktop-icon-label">LinkedIn</div>
+            </div>
+            <div class="desktop-icon-item" onclick="window.openApp('terminal')">
+                <div class="desktop-icon-img bg-black"><i class="fa-solid fa-terminal"></i></div>
+                <div class="desktop-icon-label">Terminal</div>
+            </div>
+            <div class="desktop-icon-item" onclick="window.openApp('finder')">
+                <div class="desktop-icon-img bg-blue"><i class="fa-solid fa-folder"></i></div>
+                <div class="desktop-icon-label">Projects</div>
+            </div>
+            <div class="desktop-icon-item" onclick="window.openApp('about', 'resume')">
+                <div class="desktop-icon-img bg-white" style="color: #ff3b30;"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="desktop-icon-label">Resume.pdf</div>
+            </div>
+        </div>
+
+        <!-- 4. Menu Bar -->
+        <nav id="menu-bar">
+            <div class="menu-left">
+                <div class="menu-item apple-menu-btn"><i class="fa-brands fa-apple"></i></div>
+                <div class="menu-item app-name"><b>Finder</b></div>
+                <div class="menu-item" onclick="window.openApp('about')">About Aryan</div>
+                <div class="menu-item">File</div>
+                <div class="menu-item">Edit</div>
+                <div class="menu-item">View</div>
+                <div class="menu-item">Go</div>
+                <div class="menu-item">Window</div>
+                <div class="menu-item">Help</div>
+            </div>
+            <div class="menu-right">
+                <div class="menu-item icon-item" id="battery-status"><i class="fa-solid fa-battery-full"></i> 100%</div>
+                <div class="menu-item icon-item"><i class="fa-solid fa-wifi"></i></div>
+                <div class="menu-item icon-item" id="spotlight-btn"><i class="fa-solid fa-magnifying-glass"></i></div>
+                <div class="menu-item icon-item" id="control-center-btn"><i class="fa-solid fa-sliders"></i></div>
+                <div class="menu-item icon-item" id="siri-btn"><i class="fa-solid fa-microphone"></i></div>
+                <div class="menu-item" id="datetime-display">Tue 9:41 AM</div>
+            </div>
+            
+            <!-- Apple Menu Dropdown -->
+            <div id="apple-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" id="about-mac-btn"><i class="fa-brands fa-apple" style="margin-right: 6px;"></i> About This Mac</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.openApp('settings')">System Settings...</div>
+                <div class="dropdown-item" onclick="window.openApp('appstore')">App Store...</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.openApp('github')"><i class="fa-brands fa-github" style="margin-right: 6px;"></i> Open GitHub Profile</div>
+                <div class="dropdown-item" onclick="window.openApp('linkedin')"><i class="fa-brands fa-linkedin" style="margin-right: 6px;"></i> Open LinkedIn Profile</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" id="sleep-btn">Sleep</div>
+                <div class="dropdown-item" onclick="location.reload()">Restart...</div>
+                <div class="dropdown-item" onclick="location.reload()">Shut Down...</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" id="lock-screen-btn">Lock Screen</div>
+                <div class="dropdown-item" id="logout-btn">Log Out Aryan Raj...</div>
+            </div>
+        </nav>
+
+        <!-- 6. Window Container -->
+        <div id="window-container">
+            <!-- App windows will be spawned here -->
+        </div>
+
+        <!-- 7. Spotlight Search -->
+        <div id="spotlight-search" class="overlay hidden">
+            <div class="spotlight-container">
+                <div class="spotlight-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="spotlight-input" placeholder="Spotlight Search">
+                </div>
+                <div class="spotlight-results hidden" id="spotlight-results">
+                    <!-- Results populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Launchpad -->
+        <div id="launchpad" class="overlay hidden">
+            <div class="launchpad-search">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search">
+                </div>
+            </div>
+            <div class="launchpad-grid" id="launchpad-grid">
+                <!-- Launchpad icons populated by JS -->
+            </div>
+        </div>
+
+        <!-- 9. Notification Center -->
+        <div id="notification-center" class="sidebar hidden">
+            <div class="nc-header">
+                <div class="nc-date">Tuesday, October 1</div>
+            </div>
+            <div class="nc-widgets">
+                <!-- Widgets -->
+                <div class="widget clock-widget">
+                    <div class="clock-face"></div>
+                </div>
+                <div class="widget calendar-widget">
+                    <div class="cal-month">October</div>
+                    <div class="cal-day">1</div>
+                </div>
+            </div>
+            <div class="nc-notifications">
+                <!-- Notifications -->
+            </div>
+        </div>
+
+        <!-- 10. Control Center -->
+        <div id="control-center" class="dropdown-panel hidden">
+            <div class="cc-grid">
+                <div class="cc-block connectivity">
+                    <div class="cc-row"><div class="cc-icon active"><i class="fa-solid fa-wifi"></i></div><div class="cc-info"><div class="cc-title">Wi-Fi</div><div class="cc-subtitle">Home Network</div></div></div>
+                    <div class="cc-row"><div class="cc-icon active"><i class="fa-brands fa-bluetooth-b"></i></div><div class="cc-info"><div class="cc-title">Bluetooth</div><div class="cc-subtitle">On</div></div></div>
+                    <div class="cc-row"><div class="cc-icon"><i class="fa-solid fa-tower-broadcast"></i></div><div class="cc-info"><div class="cc-title">AirDrop</div><div class="cc-subtitle">Contacts Only</div></div></div>
+                </div>
+                <div class="cc-block dnd">
+                    <div class="cc-icon"><i class="fa-solid fa-moon"></i></div>
+                    <div class="cc-title">Do Not Disturb</div>
+                </div>
+                <div class="cc-block sliders display">
+                    <div class="cc-title">Display</div>
+                    <div class="cc-slider-container">
+                        <i class="fa-regular fa-sun"></i>
+                        <input type="range" min="0" max="100" value="80">
+                    </div>
+                </div>
+                <div class="cc-block sliders sound">
+                    <div class="cc-title">Sound</div>
+                    <div class="cc-slider-container">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <input type="range" min="0" max="100" value="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Dock -->
+        <div id="dock-container">
+            <div id="dock">
+                <!-- App icons -->
+                <div class="dock-item" data-app="finder" title="Finder">
+                    <div class="dock-icon bg-blue"><i class="fa-solid fa-face-smile"></i></div>
+                    <div class="dock-dot active"></div>
+                </div>
+                <div class="dock-item" data-app="launchpad" title="Launchpad">
+                    <div class="dock-icon bg-gray"><i class="fa-solid fa-rocket"></i></div>
+                </div>
+                <div class="dock-separator"></div>
+
+                <!-- Featured Custom Creator Apps -->
+                <div class="dock-item" data-app="about" title="About This Mac (Aryan Raj)">
+                    <div class="dock-icon bg-aryan"><img src="assets/profile.jpg" alt="Aryan Raj"></div>
+                </div>
+                <div class="dock-item" data-app="github" title="GitHub (Aryan Raj)">
+                    <div class="dock-icon bg-github"><i class="fa-brands fa-github"></i></div>
+                </div>
+                <div class="dock-item" data-app="linkedin" title="LinkedIn (Aryan Raj)">
+                    <div class="dock-icon bg-linkedin"><i class="fa-brands fa-linkedin-in"></i></div>
+                </div>
+                
+                <div class="dock-separator"></div>
+                
+                <div class="dock-item" data-app="safari" title="Safari">
+                    <div class="dock-icon bg-lightblue"><i class="fa-regular fa-compass"></i></div>
+                </div>
+                <div class="dock-item" data-app="mail" title="Mail">
+                    <div class="dock-icon bg-blue"><i class="fa-regular fa-envelope"></i></div>
+                </div>
+                <div class="dock-item" data-app="maps" title="Maps">
+                    <div class="dock-icon bg-green"><i class="fa-solid fa-map"></i></div>
+                </div>
+                <div class="dock-item" data-app="photos" title="Photos">
+                    <div class="dock-icon bg-white" style="color: #ff2d55;"><i class="fa-solid fa-image"></i></div>
+                </div>
+                <div class="dock-item" data-app="messages" title="Messages">
+                    <div class="dock-icon bg-green"><i class="fa-solid fa-message"></i></div>
+                </div>
+                <div class="dock-item" data-app="music" title="Music">
+                    <div class="dock-icon bg-red"><i class="fa-solid fa-music"></i></div>
+                </div>
+                <div class="dock-item" data-app="notes" title="Notes">
+                    <div class="dock-icon bg-yellow"><i class="fa-solid fa-note-sticky"></i></div>
+                </div>
+                <div class="dock-item" data-app="calendar" title="Calendar">
+                    <div class="dock-icon bg-white" style="color: #ff3b30;"><i class="fa-regular fa-calendar"></i></div>
+                </div>
+                <div class="dock-item" data-app="appstore" title="App Store">
+                    <div class="dock-icon bg-blue"><i class="fa-brands fa-app-store"></i></div>
+                </div>
+                <div class="dock-item" data-app="settings" title="System Settings">
+                    <div class="dock-icon bg-gray"><i class="fa-solid fa-gear"></i></div>
+                </div>
+                <div class="dock-item" data-app="calculator" title="Calculator">
+                    <div class="dock-icon bg-orange"><i class="fa-solid fa-calculator"></i></div>
+                </div>
+                <div class="dock-item" data-app="textedit" title="TextEdit">
+                    <div class="dock-icon bg-white" style="color: #000;"><i class="fa-solid fa-pen-nib"></i></div>
+                </div>
+                <div class="dock-item" data-app="terminal" title="Terminal">
+                    <div class="dock-icon bg-black"><i class="fa-solid fa-terminal"></i></div>
+                </div>
+                <div class="dock-item" data-app="weather" title="Weather">
+                    <div class="dock-icon bg-blue"><i class="fa-solid fa-cloud-sun"></i></div>
+                </div>
+                
+                <div class="dock-separator"></div>
+                <div class="dock-item" data-app="trash" title="Trash">
+                    <div class="dock-icon bg-transparent"><i class="fa-solid fa-trash-can"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Right-click context menu -->
+        <div id="context-menu" class="dropdown-menu hidden">
+            <div class="dropdown-item" onclick="window.openApp('about')"><i class="fa-brands fa-apple" style="margin-right: 6px;"></i> About This Mac</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.openApp('github')"><i class="fa-brands fa-github" style="margin-right: 6px;"></i> Open GitHub</div>
+            <div class="dropdown-item" onclick="window.openApp('linkedin')"><i class="fa-brands fa-linkedin" style="margin-right: 6px;"></i> Open LinkedIn</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item">New Folder</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item">Get Info</div>
+            <div class="dropdown-item" onclick="window.openApp('settings')">Change Desktop Background...</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item">Use Stacks</div>
+            <div class="dropdown-item">Sort By <i class="fa-solid fa-chevron-right float-right"></i></div>
+            <div class="dropdown-item">Clean Up</div>
+            <div class="dropdown-item">Clean Up By <i class="fa-solid fa-chevron-right float-right"></i></div>
+            <div class="dropdown-item">Show View Options</div>
+        </div>
+
+    </div>
+
+    <!-- 12. Lock Screen (similar to login but no power options, just unlock) -->
+    <div id="lock-screen" class="screen hidden">
+        <div class="lock-clock">
+            <div class="lock-time">9:41</div>
+            <div class="lock-date">Tuesday, October 1</div>
+        </div>
+        <div class="login-container" style="margin-top: 50px;">
+            <div class="user-avatar" style="overflow: hidden; padding: 0;">
+                <img src="assets/profile.jpg" alt="Aryan Raj" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            </div>
+            <div class="user-name">Aryan Raj</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 8px;">Software Engineer & AI Developer</div>
+            <div class="password-container">
+                <input type="password" id="unlock-password" placeholder="Press Enter to Unlock">
+                <button id="unlock-btn"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Main Application Script -->
+<script src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+/* menubar.css - macOS Menu Bar */
+
+#menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  font-size: 13px;
+  color: #333;
+  z-index: 8000;
+  border-bottom: 0.5px solid rgba(0,0,0,0.12);
+  user-select: none;
+}
+
+.menu-left, .menu-right {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.menu-item {
+  padding: 0 10px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.menu-item:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+.menu-item:active {
+  background: var(--system-blue, #007AFF);
+  color: #fff;
+}
+
+.apple-menu-btn {
+  font-size: 16px;
+}
+
+.app-name {
+  font-weight: 600;
+}
+
+.icon-item {
+  font-size: 12px;
+  padding: 0 6px;
+  gap: 4px;
+}
+
+#datetime-display {
+  font-size: 13px;
+  padding: 0 8px;
+}
+
+/* Dropdown Menus */
+.dropdown-menu {
+  position: absolute;
+  top: 25px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(0,0,0,0.12);
+  padding: 4px 0;
+  min-width: 220px;
+  z-index: 9000;
+  font-size: 13px;
+}
+
+#apple-menu {
+  left: 8px;
+}
+
+.dropdown-item {
+  padding: 4px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 4px;
+  margin: 0 4px;
+  transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+  background: var(--system-blue, #007AFF);
+  color: #fff;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.1);
+  margin: 4px 0;
+}
+
+.float-right {
+  margin-left: auto;
+}

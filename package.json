@@ -1,0 +1,9 @@
+{
+  "name": "macos-web-os",
+  "version": "15.0.0",
+  "description": "A fully functional macOS Web Operating System",
+  "scripts": {
+    "start": "cd server && node server.js",
+    "dev": "cd server && node server.js"
+  }
+}

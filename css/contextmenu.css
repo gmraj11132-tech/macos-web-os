@@ -1,0 +1,58 @@
+/* contextmenu.css */
+.context-menu {
+  position: fixed;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-radius: 8px;
+  padding: 5px 0;
+  min-width: 200px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
+  z-index: 12000;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transform-origin: top left;
+  transition: opacity 0.1s, transform 0.1s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.context-menu.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: scale(1);
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 15px;
+  font-size: 13px;
+  color: #333;
+  cursor: default;
+}
+
+.context-menu-item:hover {
+  background: #007AFF;
+  color: white;
+}
+
+.context-menu-label {
+  flex: 1;
+}
+
+.context-menu-shortcut {
+  color: #888;
+  font-size: 12px;
+  margin-left: 20px;
+}
+
+.context-menu-item:hover .context-menu-shortcut {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 4px 0;
+}

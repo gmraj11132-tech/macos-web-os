@@ -1,0 +1,107 @@
+/* dock.css - macOS Dock */
+
+#dock-container {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7500;
+  max-width: 95vw;
+}
+
+#dock {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  border-radius: 18px;
+  border: 0.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.16s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform-origin: bottom center;
+  position: relative;
+}
+
+.dock-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s, transform 0.2s;
+  overflow: hidden;
+}
+
+.dock-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.dock-item:hover .dock-icon {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Dock icon background colors */
+.bg-blue { background: linear-gradient(135deg, #007AFF, #0051D4); }
+.bg-lightblue { background: linear-gradient(135deg, #4ABCF7, #007AFF); }
+.bg-green { background: linear-gradient(135deg, #34C759, #248A3D); }
+.bg-red { background: linear-gradient(135deg, #FF3B30, #D70015); }
+.bg-yellow { background: linear-gradient(135deg, #FFD60A, #F0C000); }
+.bg-orange { background: linear-gradient(135deg, #FF9500, #E08600); }
+.bg-gray { background: linear-gradient(135deg, #8E8E93, #636366); }
+.bg-black { background: linear-gradient(135deg, #2c2c2e, #1c1c1e); }
+.bg-white { background: linear-gradient(135deg, #ffffff, #e5e5ea); color: #333 !important; }
+.bg-transparent { background: transparent; box-shadow: none !important; color: rgba(255, 255, 255, 0.85); }
+
+/* Dedicated Branded App Colors */
+.bg-github { background: linear-gradient(135deg, #24292f, #0d1117); color: #ffffff !important; }
+.bg-linkedin { background: linear-gradient(135deg, #0a66c2, #004182); color: #ffffff !important; }
+.bg-aryan { background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid rgba(255, 255, 255, 0.4); }
+
+/* Running indicator dot */
+.dock-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  margin-top: 3px;
+  visibility: hidden;
+}
+
+.dock-dot.active {
+  background: rgba(255, 255, 255, 0.9);
+  visibility: visible;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+/* Dock separator */
+.dock-separator {
+  width: 1px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 4px;
+  align-self: center;
+}
+
+/* Dock bounce animation */
+@keyframes dockBounce {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-18px); }
+  50% { transform: translateY(0); }
+  70% { transform: translateY(-8px); }
+}

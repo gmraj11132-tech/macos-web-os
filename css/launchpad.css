@@ -1,0 +1,59 @@
+/* launchpad.css */
+
+#launchpad {
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(30px);
+  z-index: 8500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+}
+
+.launchpad-search {
+  margin-bottom: 40px;
+}
+
+.launchpad-search .search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 6px 14px;
+  width: 200px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.launchpad-search .search-box i {
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+}
+
+.launchpad-search .search-box input {
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+}
+
+.launchpad-search .search-box input::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+#launchpad-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 30px 40px;
+  max-width: 900px;
+  width: 100%;
+  padding: 0 40px;
+}
+
+.launchpad-item:hover div:first-child {
+  transform: scale(1.08);
+  transition: transform 0.15s ease;
+}

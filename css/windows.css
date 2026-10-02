@@ -1,0 +1,187 @@
+/* windows.css - macOS Window Management */
+
+#window-container {
+  position: fixed;
+  top: 25px;
+  left: 0;
+  right: 0;
+  bottom: 70px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.window {
+  position: absolute;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: all;
+  min-width: 300px;
+  min-height: 200px;
+  transition: box-shadow 0.2s;
+}
+
+.window.active {
+  box-shadow: 0 25px 70px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(0,0,0,0.15);
+}
+
+.window-titlebar {
+  height: 38px;
+  min-height: 38px;
+  background: linear-gradient(180deg, #e8e8e8, #d6d6d6);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  cursor: default;
+  user-select: none;
+  position: relative;
+  border-bottom: 0.5px solid rgba(0,0,0,0.1);
+}
+
+.window.active .window-titlebar {
+  background: linear-gradient(180deg, #ececec, #dcdcdc);
+}
+
+.traffic-lights {
+  display: flex;
+  gap: 7px;
+  z-index: 1;
+}
+
+.traffic-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: filter 0.15s;
+}
+
+.traffic-light.close {
+  background: #FF5F57;
+  border: 0.5px solid #E24640;
+}
+
+.traffic-light.minimize {
+  background: #FEBC2E;
+  border: 0.5px solid #DEA123;
+}
+
+.traffic-light.maximize {
+  background: #28C840;
+  border: 0.5px solid #1AAB29;
+}
+
+/* Show icons on hover */
+.traffic-lights:hover .traffic-light.close::after {
+  content: '×';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.5);
+  line-height: 1;
+}
+
+.traffic-lights:hover .traffic-light.minimize::after {
+  content: '−';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.5);
+  line-height: 1;
+}
+
+.traffic-lights:hover .traffic-light.maximize::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.5);
+  line-height: 1;
+}
+
+/* Inactive window - gray traffic lights */
+.window:not(.active) .traffic-light.close,
+.window:not(.active) .traffic-light.minimize,
+.window:not(.active) .traffic-light.maximize {
+  background: #ddd;
+  border-color: #ccc;
+}
+
+.window-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  pointer-events: none;
+}
+
+.window:not(.active) .window-title {
+  color: #999;
+}
+
+.window-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Overlay styles */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 8500;
+  backdrop-filter: blur(5px);
+}
+
+/* Sidebar (Notification Center) */
+.sidebar {
+  position: fixed;
+  top: 25px;
+  right: 0;
+  width: 320px;
+  bottom: 0;
+  background: rgba(240,240,240,0.92);
+  backdrop-filter: blur(30px);
+  z-index: 7800;
+  box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+/* Dropdown panel (Control Center) */
+.dropdown-panel {
+  position: fixed;
+  top: 25px;
+  right: 60px;
+  width: 320px;
+  background: rgba(240, 240, 240, 0.92);
+  backdrop-filter: blur(30px) saturate(180%);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  z-index: 8200;
+  padding: 12px;
+}
