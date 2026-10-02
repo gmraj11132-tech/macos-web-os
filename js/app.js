@@ -152,6 +152,13 @@ function initDesktop() {
   initWindowManager();
   initFileSystem();
   initMenuBar();
+  initSiri();
+  initForceQuit();
+  initPowerActions();
+  initCalendarMenu();
+  initBatteryAndWifi();
+  initMobileOrientationGuidance();
+  setupFullscreen();
   initDock();
   initSpotlight();
   initControlCenter();
@@ -226,8 +233,9 @@ function initWindowManager() {
       win.querySelector('.close').addEventListener('click', () => wm.closeWindow(win));
       win.querySelector('.minimize').addEventListener('click', () => wm.minimizeWindow(win));
       win.querySelector('.maximize').addEventListener('click', () => wm.maximizeWindow(win));
-      // Focus on click
+      // Focus on click and touch
       win.addEventListener('mousedown', () => wm.focusWindow(win));
+      win.addEventListener('touchstart', () => wm.focusWindow(win), { passive: true });
 
       // Update menubar
       const reg = appRegistry[appId];
@@ -294,6 +302,38 @@ function initWindowManager() {
       return windows.filter(w => w.style.display !== 'none').sort((a, b) => parseInt(b.style.zIndex) - parseInt(a.style.zIndex))[0];
     },
 
+    closeActive() {
+      const active = this.getActiveWindow();
+      if (active) this.closeWindow(active);
+    },
+
+    minimizeActive() {
+      const active = this.getActiveWindow();
+      if (active) this.minimizeWindow(active);
+    },
+
+    maximizeActive() {
+      const active = this.getActiveWindow();
+      if (active) this.maximizeWindow(active);
+    },
+
+    bringAllToFront() {
+      windows.forEach(w => {
+        w.style.display = 'flex';
+        w.style.opacity = '1';
+        w.style.transform = 'scale(1)';
+        w.style.zIndex = ++zIndex;
+      });
+    },
+
+    closeAllWindows() {
+      [...windows].forEach(w => this.closeWindow(w));
+    },
+
+    getOpenApps() {
+      return [...new Set(windows.map(w => w.dataset.app))];
+    },
+
     closeAll(appId) {
       [...windows].filter(w => w.dataset.app === appId).forEach(w => wm.closeWindow(w));
     }
@@ -302,6 +342,8 @@ function initWindowManager() {
   function setupDrag(win) {
     const titlebar = win.querySelector('.window-titlebar');
     let dragging = false, sx, sy, sl, st;
+
+    // Mouse Dragging
     titlebar.addEventListener('mousedown', e => {
       if (e.target.classList.contains('traffic-light')) return;
       dragging = true;
@@ -316,13 +358,32 @@ function initWindowManager() {
       win.style.top = Math.max(25, st + e.clientY - sy) + 'px';
     });
     document.addEventListener('mouseup', () => { dragging = false; });
+
+    // Touch Dragging (Mobile / Tablets)
+    titlebar.addEventListener('touchstart', e => {
+      if (e.target.classList.contains('traffic-light')) return;
+      const touch = e.touches[0];
+      dragging = true;
+      sx = touch.clientX; sy = touch.clientY;
+      sl = parseInt(win.style.left) || 0;
+      st = parseInt(win.style.top) || 0;
+      win.style.transition = 'none';
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const touch = e.touches[0];
+      win.style.left = Math.max(0, sl + touch.clientX - sx) + 'px';
+      win.style.top = Math.max(22, st + touch.clientY - sy) + 'px';
+    }, { passive: true });
+    document.addEventListener('touchend', () => { dragging = false; });
+
     // Double-click to maximize
     titlebar.addEventListener('dblclick', () => wm.maximizeWindow(win));
   }
 
   window.macOS.windowManager = wm;
-  window.osEvents.on('close-active-window', () => { const w = wm.getActiveWindow(); if (w) wm.closeWindow(w); });
-  window.osEvents.on('minimize-active-window', () => { const w = wm.getActiveWindow(); if (w) wm.minimizeWindow(w); });
+  window.osEvents.on('close-active-window', () => { wm.closeActive(); });
+  window.osEvents.on('minimize-active-window', () => { wm.minimizeActive(); });
 }
 
 // ============================================================
@@ -390,10 +451,149 @@ function initFileSystem() {
 }
 
 // ============================================================
+// AUDIO FEEDBACK SYNTHESIZER
+// ============================================================
+function playSystemSound(type = 'click') {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.04);
+    } else if (type === 'siri') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    } else if (type === 'power') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(260, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    }
+  } catch (e) {}
+}
+
+// ============================================================
+// FULLSCREEN & MOBILE ORIENTATION MANAGEMENT
+// ============================================================
+function setupFullscreen() {
+  const enterFs = () => {
+    const docEl = document.documentElement;
+    const rfs = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+    if (rfs && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      rfs.call(docEl).then(() => {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      }).catch(err => {
+        console.log('Fullscreen request handled:', err.message);
+      });
+    }
+  };
+
+  window.enterFullscreen = enterFs;
+
+  // Auto-enable fullscreen on VERY first user interaction anywhere on page
+  const onFirstInteraction = () => {
+    enterFs();
+    ['click', 'pointerdown', 'touchstart', 'keydown'].forEach(evt => {
+      document.removeEventListener(evt, onFirstInteraction);
+    });
+  };
+  ['click', 'pointerdown', 'touchstart', 'keydown'].forEach(evt => {
+    document.addEventListener(evt, onFirstInteraction, { once: true });
+  });
+
+  // Boot screen fullscreen hint
+  const bootHint = document.getElementById('boot-fullscreen-hint');
+  if (bootHint) bootHint.addEventListener('click', enterFs);
+
+  // Fullscreen button in menubar
+  const fsBtn = document.getElementById('fullscreen-toggle-btn');
+  if (fsBtn) {
+    fsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        enterFs();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(() => {});
+      }
+    });
+  }
+
+  // View menu item
+  document.getElementById('view-menu-fullscreen')?.addEventListener('click', () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) enterFs();
+    else if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  });
+
+  // Track fullscreenchange to update icon
+  document.addEventListener('fullscreenchange', () => {
+    const icon = fsBtn?.querySelector('i');
+    if (icon) {
+      if (document.fullscreenElement) {
+        icon.className = 'fa-solid fa-compress';
+        fsBtn.title = 'Exit Fullscreen';
+      } else {
+        icon.className = 'fa-solid fa-expand';
+        fsBtn.title = 'Enter Fullscreen';
+      }
+    }
+  });
+}
+
+function initMobileOrientationGuidance() {
+  const overlay = document.getElementById('rotate-device-overlay');
+  const btn = document.getElementById('btn-force-landscape');
+
+  const checkOrientation = () => {
+    if (!overlay) return;
+    const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth <= 900;
+    if (isPortrait) {
+      overlay.classList.remove('hidden');
+    } else {
+      overlay.classList.add('hidden');
+    }
+  };
+
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 300));
+  checkOrientation();
+
+  if (btn) {
+    btn.addEventListener('click', () => {
+      if (window.enterFullscreen) window.enterFullscreen();
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+      setTimeout(checkOrientation, 300);
+    });
+  }
+}
+
+// ============================================================
 // MENU BAR
 // ============================================================
 function initMenuBar() {
-  // Clock
+  // Clock in menubar
   const clockEl = document.getElementById('datetime-display');
   const updateClock = () => {
     const now = new Date();
@@ -405,47 +605,420 @@ function initMenuBar() {
   setInterval(updateClock, 1000);
   updateClock();
 
-  // Apple menu toggle
-  const appleBtn = document.querySelector('.apple-menu-btn');
-  const appleMenu = document.getElementById('apple-menu');
-  if (appleBtn && appleMenu) {
-    appleBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      appleMenu.classList.toggle('hidden');
-    });
-  }
+  // All dropdown toggles
+  const menuBindings = [
+    { btn: '.apple-menu-btn', menu: '#apple-menu' },
+    { btn: '#menu-file-btn', menu: '#file-menu' },
+    { btn: '#menu-edit-btn', menu: '#edit-menu' },
+    { btn: '#menu-view-btn', menu: '#view-menu' },
+    { btn: '#menu-go-btn', menu: '#go-menu' },
+    { btn: '#menu-window-btn', menu: '#window-menu' },
+    { btn: '#menu-help-btn', menu: '#help-menu' },
+    { btn: '#battery-status', menu: '#battery-menu' },
+    { btn: '#wifi-btn', menu: '#wifi-menu' },
+    { btn: '#datetime-display', menu: '#datetime-menu' }
+  ];
 
-  // Apple menu items
+  const allMenus = document.querySelectorAll('.dropdown-menu');
+
+  const closeAllMenus = () => {
+    allMenus.forEach(m => m.classList.add('hidden'));
+  };
+
+  menuBindings.forEach(({ btn, menu }) => {
+    const b = document.querySelector(btn);
+    const m = document.querySelector(menu);
+    if (b && m) {
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        const isClosed = m.classList.contains('hidden');
+        closeAllMenus();
+        if (isClosed) {
+          m.classList.remove('hidden');
+          playSystemSound('click');
+        }
+      });
+    }
+  });
+
+  // Apple Menu Items
   document.getElementById('about-mac-btn')?.addEventListener('click', () => {
-    appleMenu.classList.add('hidden');
+    closeAllMenus();
     openApp('about');
   });
   document.getElementById('lock-screen-btn')?.addEventListener('click', () => {
-    appleMenu.classList.add('hidden');
+    closeAllMenus();
     showLockScreen();
   });
   document.getElementById('logout-btn')?.addEventListener('click', () => {
-    appleMenu.classList.add('hidden');
+    closeAllMenus();
     location.reload();
   });
 
   // Close menus on outside click
-  document.addEventListener('click', () => {
-    if (appleMenu) appleMenu.classList.add('hidden');
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.menu-item')) {
+      closeAllMenus();
+    }
   });
 
   // Spotlight button
   document.getElementById('spotlight-btn')?.addEventListener('click', e => {
     e.stopPropagation();
+    closeAllMenus();
     window.osEvents.emit('toggle-spotlight');
   });
 
   // Control Center button
   document.getElementById('control-center-btn')?.addEventListener('click', e => {
     e.stopPropagation();
+    closeAllMenus();
     window.osEvents.emit('toggle-control-center');
   });
 }
+
+// ============================================================
+// SIRI ENGINE
+// ============================================================
+function initSiri() {
+  const siriModal = document.getElementById('siri-modal');
+  const siriBtn = document.getElementById('siri-btn');
+  const closeBtn = document.getElementById('siri-close-btn');
+  const sendBtn = document.getElementById('siri-send-btn');
+  const input = document.getElementById('siri-input');
+  const dialogue = document.getElementById('siri-dialogue');
+  if (!siriModal) return;
+
+  const openSiri = () => {
+    siriModal.classList.remove('hidden');
+    playSystemSound('siri');
+    if (input) input.focus();
+  };
+  const closeSiri = () => siriModal.classList.add('hidden');
+
+  siriBtn?.addEventListener('click', e => {
+    e.stopPropagation();
+    if (siriModal.classList.contains('hidden')) openSiri();
+    else closeSiri();
+  });
+  closeBtn?.addEventListener('click', closeSiri);
+
+  const handleSiriQuery = (query) => {
+    if (!query || !query.trim()) return;
+    const q = query.trim();
+
+    // User message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'siri-message siri-user';
+    userMsg.textContent = q;
+    dialogue.appendChild(userMsg);
+    if (input) input.value = '';
+
+    const lower = q.toLowerCase();
+    let reply = '';
+    let action = null;
+
+    if (lower.includes('aryan') || lower.includes('who are you') || lower.includes('who is aryan')) {
+      reply = "Aryan Raj is a skilled Software Engineer and AI Developer pursuing CSE at Techno India University (CGPA 8.0). He designed and built this complete macOS Web OS environment!";
+      action = () => openApp('about');
+    } else if (lower.includes('project') || lower.includes('portfolio') || lower.includes('work')) {
+      reply = "Opening Aryan's verified projects and portfolio in About This Mac!";
+      action = () => openApp('about', 'projects');
+    } else if (lower.includes('github') || lower.includes('repo')) {
+      reply = "Launching Aryan Raj's GitHub app (@gmraj11132-tech)!";
+      action = () => openApp('github');
+    } else if (lower.includes('linkedin')) {
+      reply = "Opening Aryan's LinkedIn network profile!";
+      action = () => openApp('linkedin');
+    } else if (lower.includes('terminal') || lower.includes('bash') || lower.includes('shell')) {
+      reply = "Opening Terminal with aryan@macbook-pro shell!";
+      action = () => openApp('terminal');
+    } else if (lower.includes('weather')) {
+      reply = "Current conditions in Noida: 28°C, Clear Skies, 62% Humidity. Perfect conditions for coding!";
+      action = () => openApp('weather');
+    } else if (lower.includes('joke')) {
+      const jokes = [
+        "Why do programmers prefer dark mode? Because light attracts bugs!",
+        "There are 10 types of people in the world: those who understand binary, and those who don't.",
+        "Why did the JavaScript developer wear glasses? Because they didn't C#!"
+      ];
+      reply = jokes[Math.floor(Math.random() * jokes.length)];
+    } else if (lower.includes('time') || lower.includes('date')) {
+      reply = `The time is currently ${new Date().toLocaleTimeString('en-US')}.`;
+    } else if (lower.includes('fullscreen')) {
+      reply = "Entering Full Screen mode right now!";
+      action = () => { if (window.enterFullscreen) window.enterFullscreen(); };
+    } else {
+      reply = `I heard: "${q}". You can ask me about Aryan Raj, his projects, GitHub, LinkedIn, or ask me to open any app!`;
+    }
+
+    setTimeout(() => {
+      const botMsg = document.createElement('div');
+      botMsg.className = 'siri-message siri-bot';
+      botMsg.innerHTML = `<i class="fa-solid fa-sparkles" style="color:#00f0ff;margin-right:6px;"></i> ${reply}`;
+      dialogue.appendChild(botMsg);
+      dialogue.scrollTop = dialogue.scrollHeight;
+      playSystemSound('click');
+      if (action) setTimeout(action, 500);
+    }, 350);
+
+    dialogue.scrollTop = dialogue.scrollHeight;
+  };
+
+  sendBtn?.addEventListener('click', () => handleSiriQuery(input?.value));
+  input?.addEventListener('keydown', e => { if (e.key === 'Enter') handleSiriQuery(input.value); });
+
+  siriModal.querySelectorAll('.siri-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const prompt = chip.dataset.prompt || chip.textContent;
+      handleSiriQuery(prompt);
+    });
+  });
+}
+
+// ============================================================
+// FORCE QUIT APPLICATIONS
+// ============================================================
+function initForceQuit() {
+  const modal = document.getElementById('force-quit-modal');
+  const list = document.getElementById('force-quit-list');
+  const cancelBtn = document.getElementById('force-quit-cancel');
+  const actionBtn = document.getElementById('force-quit-action');
+  let selectedApp = null;
+
+  const openForceQuit = () => {
+    if (!modal || !list) return;
+    const openApps = window.macOS.windowManager ? window.macOS.windowManager.getOpenApps() : [];
+    list.innerHTML = '';
+    selectedApp = null;
+    actionBtn.disabled = true;
+
+    if (openApps.length === 0) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:#888;font-size:13px;">No active applications</div>';
+    } else {
+      openApps.forEach(appId => {
+        const reg = appRegistry[appId] || { name: appId, icon: 'fa-window-maximize', color: '#007AFF' };
+        const item = document.createElement('div');
+        item.className = 'force-quit-item';
+        item.innerHTML = `<div style="width:24px;height:24px;border-radius:6px;background:${reg.color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;"><i class="fa-solid ${reg.icon}"></i></div><span>${reg.name}</span>`;
+        item.addEventListener('click', () => {
+          list.querySelectorAll('.force-quit-item').forEach(i => i.classList.remove('selected'));
+          item.classList.add('selected');
+          selectedApp = appId;
+          actionBtn.disabled = false;
+        });
+        list.appendChild(item);
+      });
+    }
+    modal.classList.remove('hidden');
+    playSystemSound('click');
+  };
+
+  document.getElementById('force-quit-btn')?.addEventListener('click', () => {
+    document.getElementById('apple-menu')?.classList.add('hidden');
+    openForceQuit();
+  });
+
+  cancelBtn?.addEventListener('click', () => modal?.classList.add('hidden'));
+
+  actionBtn?.addEventListener('click', () => {
+    if (selectedApp) {
+      window.macOS.windowManager.closeAll(selectedApp);
+      const dockItem = document.querySelector(`.dock-item[data-app="${selectedApp}"] .dock-dot`);
+      if (dockItem) dockItem.classList.remove('active');
+      showNotification('Force Quit', `Force quit ${selectedApp}`, 'fa-triangle-exclamation');
+      modal.classList.add('hidden');
+      playSystemSound('click');
+    }
+  });
+}
+
+// ============================================================
+// POWER ACTIONS: SLEEP, RESTART, SHUTDOWN
+// ============================================================
+function initPowerActions() {
+  const sleepScreen = document.getElementById('sleep-screen');
+  const shutdownScreen = document.getElementById('shutdown-screen');
+
+  const triggerSleep = () => {
+    document.getElementById('apple-menu')?.classList.add('hidden');
+    if (sleepScreen) sleepScreen.classList.remove('hidden');
+  };
+
+  const wakeFromSleep = () => {
+    if (sleepScreen) {
+      sleepScreen.style.transition = 'opacity 0.4s ease';
+      sleepScreen.style.opacity = '0';
+      setTimeout(() => {
+        sleepScreen.classList.add('hidden');
+        sleepScreen.style.opacity = '1';
+      }, 400);
+    }
+  };
+
+  document.getElementById('sleep-btn')?.addEventListener('click', triggerSleep);
+  document.getElementById('login-sleep-btn')?.addEventListener('click', triggerSleep);
+  sleepScreen?.addEventListener('click', wakeFromSleep);
+  document.addEventListener('keydown', () => {
+    if (sleepScreen && !sleepScreen.classList.contains('hidden')) wakeFromSleep();
+  });
+
+  const triggerShutdown = () => {
+    document.getElementById('apple-menu')?.classList.add('hidden');
+    if (shutdownScreen) shutdownScreen.classList.remove('hidden');
+  };
+
+  document.getElementById('shutdown-btn')?.addEventListener('click', triggerShutdown);
+  document.getElementById('login-shutdown-btn')?.addEventListener('click', triggerShutdown);
+  document.getElementById('shutdown-power-btn')?.addEventListener('click', () => {
+    if (shutdownScreen) shutdownScreen.classList.add('hidden');
+    playSystemSound('power');
+    startBoot();
+  });
+
+  const restartMac = () => {
+    document.getElementById('apple-menu')?.classList.add('hidden');
+    const desk = document.getElementById('desktop-screen');
+    const log = document.getElementById('login-screen');
+    if (desk) desk.classList.add('hidden');
+    if (log) log.classList.add('hidden');
+    const container = document.getElementById('window-container');
+    if (container) container.innerHTML = '';
+    playSystemSound('power');
+    startBoot();
+  };
+
+  document.getElementById('restart-btn')?.addEventListener('click', restartMac);
+  document.getElementById('login-restart-btn')?.addEventListener('click', restartMac);
+}
+
+// ============================================================
+// CALENDAR & CLOCK DROPDOWN
+// ============================================================
+function initCalendarMenu() {
+  const calGrid = document.getElementById('cal-grid');
+  const calMonthYear = document.getElementById('cal-month-year');
+  const largeTime = document.getElementById('dt-large-time');
+  const largeDate = document.getElementById('dt-large-date');
+  if (!calGrid) return;
+
+  const updateTime = () => {
+    const now = new Date();
+    if (largeTime) largeTime.textContent = now.toLocaleTimeString('en-US');
+    if (largeDate) largeDate.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  };
+  setInterval(updateTime, 1000);
+  updateTime();
+
+  const renderCalendar = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    if (calMonthYear) calMonthYear.textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = now.getDate();
+
+    calGrid.innerHTML = '';
+    for (let i = 0; i < firstDay; i++) {
+      const empty = document.createElement('div');
+      calGrid.appendChild(empty);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-day-cell' + (d === today ? ' today' : '');
+      cell.textContent = d;
+      cell.addEventListener('click', () => {
+        showNotification('Calendar', `${d} ${now.toLocaleDateString('en-US', { month: 'short' })}: Everything scheduled and optimal!`, 'fa-calendar-check');
+      });
+      calGrid.appendChild(cell);
+    }
+  };
+  renderCalendar();
+}
+
+// ============================================================
+// BATTERY & WI-FI LOGIC
+// ============================================================
+function initBatteryAndWifi() {
+  const batEl = document.getElementById('battery-status');
+  const batSource = document.getElementById('battery-source-text');
+  const lowPowerToggle = document.getElementById('low-power-toggle');
+
+  if (navigator.getBattery) {
+    navigator.getBattery().then(bat => {
+      const update = () => {
+        const level = Math.round(bat.level * 100);
+        const charging = bat.charging;
+        if (batEl) {
+          const icon = level > 80 ? 'fa-battery-full' : level > 50 ? 'fa-battery-three-quarters' : level > 20 ? 'fa-battery-half' : 'fa-battery-quarter';
+          batEl.innerHTML = `<i class="fa-solid ${icon}"></i> ${level}%${charging ? ' <i class="fa-solid fa-bolt" style="font-size:10px;color:#ffcc00"></i>' : ''}`;
+        }
+        if (batSource) {
+          batSource.textContent = charging ? 'Power Adapter' : 'Battery Power';
+        }
+      };
+      update();
+      bat.addEventListener('levelchange', update);
+      bat.addEventListener('chargingchange', update);
+    }).catch(() => {});
+  }
+
+  lowPowerToggle?.addEventListener('change', e => {
+    showNotification('Battery', e.target.checked ? 'Low Power Mode Enabled' : 'Low Power Mode Disabled', 'fa-battery-quarter');
+  });
+
+  const wifiToggle = document.getElementById('wifi-power-toggle');
+  const wifiBtn = document.getElementById('wifi-btn');
+  wifiToggle?.addEventListener('change', e => {
+    const on = e.target.checked;
+    if (wifiBtn) {
+      wifiBtn.innerHTML = on ? '<i class="fa-solid fa-wifi"></i>' : '<i class="fa-solid fa-wifi-slash" style="color:#ff3b30"></i>';
+    }
+    showNotification('Wi-Fi', on ? 'Wi-Fi Connected (Aryan-HighSpeed-5G)' : 'Wi-Fi Turned Off', on ? 'fa-wifi' : 'fa-ban');
+  });
+}
+
+// ============================================================
+// GLOBAL CONVENIENCE HELPERS
+// ============================================================
+window.showDesktop = function() {
+  const wins = document.querySelectorAll('.window');
+  const allHidden = Array.from(wins).every(w => w.style.display === 'none');
+  wins.forEach(w => {
+    w.style.display = allHidden ? 'flex' : 'none';
+    if (allHidden) {
+      w.style.opacity = '1';
+      w.style.transform = 'scale(1)';
+    }
+  });
+};
+
+window.toggleDarkMode = function() {
+  const isDark = document.body.classList.toggle('dark-theme');
+  showNotification('Appearance', isDark ? 'Dark Mode Enabled' : 'Light Mode Enabled', 'fa-circle-half-stroke');
+};
+
+window.showShortcutsGuide = function() {
+  const content = `
+    <div style="padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #222;">
+      <h3 style="margin-top:0; color:#111;"><i class="fa-solid fa-keyboard" style="color:#007AFF;margin-right:8px;"></i> macOS Keyboard Shortcuts</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px;">
+        <tr style="border-bottom: 1px solid #ccc; text-align: left;"><th style="padding:8px 6px;">Shortcut</th><th style="padding:8px 6px;">Action</th></tr>
+        <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px 6px;"><kbd style="background:#eee;padding:2px 6px;border-radius:4px;">⌘ + Space</kbd></td><td style="padding:8px 6px;">Toggle Spotlight Search</td></tr>
+        <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px 6px;"><kbd style="background:#eee;padding:2px 6px;border-radius:4px;">⌘ + W</kbd></td><td style="padding:8px 6px;">Close Active Window</td></tr>
+        <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px 6px;"><kbd style="background:#eee;padding:2px 6px;border-radius:4px;">⌘ + M</kbd></td><td style="padding:8px 6px;">Minimize Active Window</td></tr>
+        <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px 6px;"><kbd style="background:#eee;padding:2px 6px;border-radius:4px;">Esc</kbd></td><td style="padding:8px 6px;">Close Spotlight / Launchpad / Siri</td></tr>
+        <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px 6px;"><kbd style="background:#eee;padding:2px 6px;border-radius:4px;">F4</kbd></td><td style="padding:8px 6px;">Toggle Launchpad</td></tr>
+        <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px 6px;"><kbd style="background:#eee;padding:2px 6px;border-radius:4px;">F11</kbd></td><td style="padding:8px 6px;">Show Desktop</td></tr>
+      </table>
+      <div style="margin-top: 18px; font-size: 12px; color: #777; text-align: right;">Engineered by Aryan Raj</div>
+    </div>
+  `;
+  window.macOS.windowManager.createWindow('shortcuts', 'Keyboard Shortcuts Guide', content, { width: 520, height: 380 });
+};
+
 
 // ============================================================
 // DOCK
@@ -1821,8 +2394,32 @@ function initControlCenter() {
 
   // Toggle buttons
   panel.querySelectorAll('.cc-icon').forEach(icon => {
-    icon.addEventListener('click', () => icon.classList.toggle('active'));
+    icon.addEventListener('click', () => {
+      icon.classList.toggle('active');
+      playSystemSound('click');
+      const title = icon.parentElement.querySelector('.cc-title')?.textContent || 'Setting';
+      const isActive = icon.classList.contains('active');
+      showNotification('Control Center', `${title} ${isActive ? 'Enabled' : 'Disabled'}`, 'fa-sliders');
+    });
   });
+
+  // Real display brightness slider
+  const displaySlider = panel.querySelector('.display input[type="range"]');
+  if (displaySlider) {
+    displaySlider.addEventListener('input', e => {
+      const val = e.target.value;
+      const desktop = document.getElementById('desktop-screen');
+      if (desktop) desktop.style.filter = `brightness(${0.4 + (val / 100) * 0.7})`;
+    });
+  }
+
+  // Real sound volume slider
+  const soundSlider = panel.querySelector('.sound input[type="range"]');
+  if (soundSlider) {
+    soundSlider.addEventListener('input', () => {
+      playSystemSound('click');
+    });
+  }
 }
 
 // ============================================================

@@ -65,6 +65,9 @@
         <div class="progress-container">
             <div id="boot-progress-bar"></div>
         </div>
+        <div id="boot-fullscreen-hint" class="boot-fullscreen-hint">
+            <i class="fa-solid fa-expand"></i> Tap anywhere to launch macOS in Full Screen
+        </div>
     </div>
 
     <!-- 2. Login Screen -->
@@ -82,9 +85,9 @@
             <div class="login-message" id="login-message"></div>
         </div>
         <div class="login-footer">
-            <div class="login-action"><i class="fa-solid fa-power-off"></i> Shut Down</div>
-            <div class="login-action"><i class="fa-solid fa-rotate-right"></i> Restart</div>
-            <div class="login-action"><i class="fa-solid fa-moon"></i> Sleep</div>
+            <div class="login-action" id="login-shutdown-btn"><i class="fa-solid fa-power-off"></i> Shut Down</div>
+            <div class="login-action" id="login-restart-btn"><i class="fa-solid fa-rotate-right"></i> Restart</div>
+            <div class="login-action" id="login-sleep-btn"><i class="fa-solid fa-moon"></i> Sleep</div>
         </div>
     </div>
 
@@ -123,19 +126,20 @@
                 <div class="menu-item apple-menu-btn"><i class="fa-brands fa-apple"></i></div>
                 <div class="menu-item app-name"><b>Finder</b></div>
                 <div class="menu-item" onclick="window.openApp('about')">About Aryan</div>
-                <div class="menu-item">File</div>
-                <div class="menu-item">Edit</div>
-                <div class="menu-item">View</div>
-                <div class="menu-item">Go</div>
-                <div class="menu-item">Window</div>
-                <div class="menu-item">Help</div>
+                <div class="menu-item" id="menu-file-btn">File</div>
+                <div class="menu-item" id="menu-edit-btn">Edit</div>
+                <div class="menu-item" id="menu-view-btn">View</div>
+                <div class="menu-item" id="menu-go-btn">Go</div>
+                <div class="menu-item" id="menu-window-btn">Window</div>
+                <div class="menu-item" id="menu-help-btn">Help</div>
             </div>
             <div class="menu-right">
                 <div class="menu-item icon-item" id="battery-status"><i class="fa-solid fa-battery-full"></i> 100%</div>
-                <div class="menu-item icon-item"><i class="fa-solid fa-wifi"></i></div>
+                <div class="menu-item icon-item" id="wifi-btn"><i class="fa-solid fa-wifi"></i></div>
                 <div class="menu-item icon-item" id="spotlight-btn"><i class="fa-solid fa-magnifying-glass"></i></div>
                 <div class="menu-item icon-item" id="control-center-btn"><i class="fa-solid fa-sliders"></i></div>
                 <div class="menu-item icon-item" id="siri-btn"><i class="fa-solid fa-microphone"></i></div>
+                <div class="menu-item icon-item" id="fullscreen-toggle-btn" title="Toggle Fullscreen"><i class="fa-solid fa-expand"></i></div>
                 <div class="menu-item" id="datetime-display">Tue 9:41 AM</div>
             </div>
             
@@ -149,12 +153,165 @@
                 <div class="dropdown-item" onclick="window.openApp('github')"><i class="fa-brands fa-github" style="margin-right: 6px;"></i> Open GitHub Profile</div>
                 <div class="dropdown-item" onclick="window.openApp('linkedin')"><i class="fa-brands fa-linkedin" style="margin-right: 6px;"></i> Open LinkedIn Profile</div>
                 <div class="dropdown-divider"></div>
+                <div class="dropdown-item" id="force-quit-btn">Force Quit... <span class="shortcut">⌥⌘⎋</span></div>
+                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="sleep-btn">Sleep</div>
-                <div class="dropdown-item" onclick="location.reload()">Restart...</div>
-                <div class="dropdown-item" onclick="location.reload()">Shut Down...</div>
+                <div class="dropdown-item" id="restart-btn">Restart...</div>
+                <div class="dropdown-item" id="shutdown-btn">Shut Down...</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="lock-screen-btn">Lock Screen</div>
                 <div class="dropdown-item" id="logout-btn">Log Out Aryan Raj...</div>
+            </div>
+
+            <!-- File Menu Dropdown -->
+            <div id="file-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" onclick="window.openApp('finder')">New Finder Window <span class="shortcut">⌘N</span></div>
+                <div class="dropdown-item" onclick="window.macOS.fileSystem.createFolder('/Users/admin/Desktop', 'New Folder ' + Date.now().toString().slice(-4)); window.showNotification('Folder Created', 'Created New Folder on Desktop');">New Folder <span class="shortcut">⇧⌘N</span></div>
+                <div class="dropdown-item" onclick="window.openApp('notes')">New Note <span class="shortcut">⌥⌘N</span></div>
+                <div class="dropdown-item" onclick="window.openApp('textedit')">New Document <span class="shortcut">⌘T</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.openApp('finder')">Open... <span class="shortcut">⌘O</span></div>
+                <div class="dropdown-item" onclick="window.openApp('about', 'resume')">Quick Look Resume <span class="shortcut">Space</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.macOS.windowManager.closeActive()">Close Window <span class="shortcut">⌘W</span></div>
+            </div>
+
+            <!-- Edit Menu Dropdown -->
+            <div id="edit-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" onclick="document.execCommand('undo');">Undo <span class="shortcut">⌘Z</span></div>
+                <div class="dropdown-item" onclick="document.execCommand('redo');">Redo <span class="shortcut">⇧⌘Z</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="document.execCommand('cut');">Cut <span class="shortcut">⌘X</span></div>
+                <div class="dropdown-item" onclick="document.execCommand('copy');">Copy <span class="shortcut">⌘C</span></div>
+                <div class="dropdown-item" onclick="document.execCommand('paste');">Paste <span class="shortcut">⌘V</span></div>
+                <div class="dropdown-item" onclick="document.execCommand('selectAll');">Select All <span class="shortcut">⌘A</span></div>
+            </div>
+
+            <!-- View Menu Dropdown -->
+            <div id="view-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" id="view-menu-fullscreen">Toggle Full Screen <span class="shortcut">⌃⌘F</span></div>
+                <div class="dropdown-item" onclick="window.openApp('launchpad')">Open Launchpad <span class="shortcut">F4</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.toggleDarkMode()">Toggle Dark/Light Mode</div>
+                <div class="dropdown-item" onclick="window.showDesktop()">Show Desktop <span class="shortcut">F11</span></div>
+                <div class="dropdown-item" onclick="window.macOS.windowManager.bringAllToFront()">Bring All to Front</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="location.reload()">Reload Interface <span class="shortcut">⌘R</span></div>
+            </div>
+
+            <!-- Go Menu Dropdown -->
+            <div id="go-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" onclick="window.openApp('about')">About Aryan Raj <span class="shortcut">⇧⌘A</span></div>
+                <div class="dropdown-item" onclick="window.openApp('github')"><i class="fa-brands fa-github" style="margin-right:6px;"></i> Aryan's GitHub</div>
+                <div class="dropdown-item" onclick="window.openApp('linkedin')"><i class="fa-brands fa-linkedin" style="margin-right:6px;"></i> Aryan's LinkedIn</div>
+                <div class="dropdown-item" onclick="window.openApp('about', 'resume')"><i class="fa-solid fa-file-pdf" style="margin-right:6px;color:#ff3b30;"></i> Resume & Credentials</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.openApp('finder')">Applications <span class="shortcut">⇧⌘A</span></div>
+                <div class="dropdown-item" onclick="window.openApp('finder')">Desktop <span class="shortcut">⇧⌘D</span></div>
+                <div class="dropdown-item" onclick="window.openApp('finder')">Documents <span class="shortcut">⇧⌘O</span></div>
+                <div class="dropdown-item" onclick="window.openApp('finder')">Downloads <span class="shortcut">⌥⌘L</span></div>
+            </div>
+
+            <!-- Window Menu Dropdown -->
+            <div id="window-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" onclick="window.macOS.windowManager.minimizeActive()">Minimize <span class="shortcut">⌘M</span></div>
+                <div class="dropdown-item" onclick="window.macOS.windowManager.maximizeActive()">Zoom / Maximize</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.macOS.windowManager.bringAllToFront()">Bring All to Front</div>
+                <div class="dropdown-item" onclick="window.macOS.windowManager.closeAllWindows()">Close All Windows</div>
+            </div>
+
+            <!-- Help Menu Dropdown -->
+            <div id="help-menu" class="dropdown-menu hidden">
+                <div class="dropdown-item" onclick="window.openApp('about')">macOS Sequoia Help</div>
+                <div class="dropdown-item" onclick="window.openApp('about')">Developer: Aryan Raj</div>
+                <div class="dropdown-item" onclick="window.openApp('about', 'contact')">Contact Support</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.showShortcutsGuide()">Keyboard Shortcuts Guide</div>
+            </div>
+
+            <!-- Battery Menu Dropdown -->
+            <div id="battery-menu" class="dropdown-menu battery-dropdown hidden">
+                <div class="battery-title" style="padding: 4px 8px; font-weight: 700; font-size: 13px;">Battery</div>
+                <div class="battery-row" style="display:flex; justify-content:space-between; padding: 4px 8px; font-size: 12px; color:#555;">
+                    <span>Power Source:</span>
+                    <span id="battery-source-text" style="color:#111; font-weight:600;">Power Adapter</span>
+                </div>
+                <div class="battery-row" style="display:flex; justify-content:space-between; padding: 4px 8px; font-size: 12px; color:#555;">
+                    <span>Battery Health:</span>
+                    <span style="color: #34c759; font-weight:600;">Normal (100%)</span>
+                </div>
+                <div class="battery-row" style="display:flex; justify-content:space-between; padding: 4px 8px; font-size: 12px; color:#555;">
+                    <span>Condition:</span>
+                    <span style="color:#111;">Optimized Charging</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="battery-toggle-row" style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px; font-size: 12px;">
+                    <span>Low Power Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="low-power-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.openApp('settings')">Battery Settings...</div>
+            </div>
+
+            <!-- Wi-Fi Menu Dropdown -->
+            <div id="wifi-menu" class="dropdown-menu wifi-dropdown hidden">
+                <div class="wifi-header" style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px;">
+                    <b style="font-size: 13px;">Wi-Fi</b>
+                    <label class="switch">
+                        <input type="checkbox" id="wifi-power-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="wifi-section-title" style="padding: 2px 8px; font-size: 11px; color:#888; font-weight:600; text-transform:uppercase;">Active Network</div>
+                <div class="dropdown-item active-network" id="wifi-active-network">
+                    <span><i class="fa-solid fa-check" style="margin-right:8px;color:#007AFF;"></i> Aryan-HighSpeed-5G</span>
+                    <i class="fa-solid fa-lock" style="font-size:11px;color:#888;"></i>
+                </div>
+                <div class="wifi-section-title" style="padding: 6px 8px 2px 8px; font-size: 11px; color:#888; font-weight:600; text-transform:uppercase;">Other Networks</div>
+                <div class="dropdown-item wifi-item" onclick="window.showNotification('Wi-Fi', 'Connected to Apple-Guest')">
+                    <span>Apple-Guest</span>
+                    <i class="fa-solid fa-wifi" style="font-size:11px;color:#888;"></i>
+                </div>
+                <div class="dropdown-item wifi-item" onclick="window.showNotification('Wi-Fi', 'Connected to Aryan-iPhone-Hotspot')">
+                    <span>Aryan's iPhone Hotspot</span>
+                    <i class="fa-solid fa-link" style="font-size:11px;color:#888;"></i>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="window.openApp('settings')">Network Settings...</div>
+            </div>
+
+            <!-- Date/Time Calendar Menu Dropdown -->
+            <div id="datetime-menu" class="dropdown-menu datetime-dropdown hidden">
+                <div class="dt-header">
+                    <div class="dt-time" id="dt-large-time">09:41:00 AM</div>
+                    <div class="dt-date" id="dt-large-date">Tuesday, October 1, 2026</div>
+                </div>
+                <div class="dt-calendar-box">
+                    <div class="cal-nav">
+                        <span id="cal-month-year">October 2026</span>
+                    </div>
+                    <div class="cal-days-header">
+                        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                    </div>
+                    <div class="cal-days-grid" id="cal-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div class="dt-events">
+                    <div class="dt-event-item">
+                        <span class="event-bullet blue"></span>
+                        <div><b>macOS Web OS</b> Live on Vercel</div>
+                    </div>
+                    <div class="dt-event-item">
+                        <span class="event-bullet green"></span>
+                        <div><b>Aryan Raj</b> Software Engineer</div>
+                    </div>
+                </div>
             </div>
         </nav>
 
@@ -333,6 +490,53 @@
             <div class="dropdown-item">Show View Options</div>
         </div>
 
+        <!-- 13. Siri Window Modal -->
+        <div id="siri-modal" class="siri-window hidden">
+            <div class="siri-header">
+                <div class="siri-orb-container">
+                    <div class="siri-orb"></div>
+                </div>
+                <div class="siri-title">Siri</div>
+                <div class="siri-close" id="siri-close-btn">&times;</div>
+            </div>
+            <div class="siri-body">
+                <div class="siri-dialogue" id="siri-dialogue">
+                    <div class="siri-message siri-bot">
+                        <i class="fa-solid fa-sparkles"></i> Hi Aryan! What can I help you with today?
+                    </div>
+                </div>
+                <div class="siri-chips">
+                    <button class="siri-chip" data-prompt="Who is Aryan Raj?">Who is Aryan Raj?</button>
+                    <button class="siri-chip" data-prompt="Open GitHub">Open GitHub</button>
+                    <button class="siri-chip" data-prompt="Show Projects">Show Projects</button>
+                    <button class="siri-chip" data-prompt="Open Terminal">Open Terminal</button>
+                    <button class="siri-chip" data-prompt="What's the weather?">Weather</button>
+                    <button class="siri-chip" data-prompt="Tell me a joke">Tell me a joke</button>
+                </div>
+                <div class="siri-input-wrapper">
+                    <input type="text" id="siri-input" placeholder="Ask Siri anything...">
+                    <button id="siri-send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 14. Force Quit Modal -->
+        <div id="force-quit-modal" class="overlay hidden">
+            <div class="force-quit-box">
+                <div class="force-quit-header">
+                    <h3>Force Quit Applications</h3>
+                    <p>If an app doesn't respond, select its name and click Force Quit.</p>
+                </div>
+                <div class="force-quit-list" id="force-quit-list">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="force-quit-footer">
+                    <button class="mac-btn secondary" id="force-quit-cancel">Cancel</button>
+                    <button class="mac-btn danger" id="force-quit-action" disabled>Force Quit</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- 12. Lock Screen (similar to login but no power options, just unlock) -->
@@ -351,6 +555,41 @@
                 <input type="password" id="unlock-password" placeholder="Press Enter to Unlock">
                 <button id="unlock-btn"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
+        </div>
+    </div>
+
+    <!-- 15. Sleep Screen -->
+    <div id="sleep-screen" class="sleep-overlay hidden">
+        <div class="sleep-content">
+            <svg viewBox="0 0 170 170" width="60" height="60" class="sleep-apple-logo">
+                <path fill="#ffffff" d="M150.37,130.25c-2.45,5.66-5.35,10.87-8.71,15.66c-4.58,6.53-8.33,11.05-11.22,13.56c-4.48,4.12-9.28,6.23-14.42,6.35c-3.69,0-8.14-1.05-13.32-3.18c-5.19-2.12-9.97-3.17-14.34-3.17c-4.58,0-9.49,1.05-14.74,3.17c-5.26,2.13-9.5,3.24-12.74,3.35c-5.11,0.22-10.15-2.06-15.1-6.85c-3.05-2.82-7-7.77-11.83-14.85C29.1,137.21,24.16,128.53,19.12,118.25C14.08,107.97,11.56,98.11,11.56,88.66c0-11.86,2.78-21.72,8.34-29.58c3.78-5.36,8.51-9.39,14.19-12.09c5.68-2.69,11.55-4.05,17.62-4.05c4.9,0,10.02,1.21,15.36,3.63c5.34,2.42,9.31,3.62,11.88,3.62c2.25,0,6.49-1.25,12.74-3.74c6.26-2.49,12.09-3.76,17.52-3.8c6.64-0.12,12.8,1.45,18.47,4.72c4.32,2.46,8.02,5.92,11.08,10.37c-9.15,5.55-13.62,13.12-13.43,22.7c0.18,7.96,3.28,14.65,9.27,20.08c3.27,2.94,7.18,5.04,11.75,6.29C155.07,113.62,153.25,122.25,150.37,130.25z M117.92,25.86c-0.22,6.01-2.58,11.66-7.07,16.94c-4.8,5.43-10.74,8.59-17.81,9.47c-0.34-5.69,1.75-11.39,6.26-17.07c2.97-3.7,6.86-6.68,11.69-8.91c4.83-2.22,9.52-3.13,14.07-2.7C125.13,24.4,121.7,25.43,117.92,25.86z"/>
+            </svg>
+            <div class="sleep-hint">Press any key or click anywhere to wake</div>
+        </div>
+    </div>
+
+    <!-- 16. Shutdown Screen -->
+    <div id="shutdown-screen" class="shutdown-overlay hidden">
+        <div class="shutdown-content">
+            <button id="shutdown-power-btn" class="power-btn" title="Turn On Mac">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+            <div class="shutdown-hint">Mac is powered off. Press power button to start.</div>
+        </div>
+    </div>
+
+    <!-- 17. Mobile Landscape Orientation Guidance Overlay -->
+    <div id="rotate-device-overlay" class="rotate-overlay hidden">
+        <div class="rotate-card">
+            <div class="rotate-phone-anim">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <i class="fa-solid fa-arrows-rotate spin-arrow"></i>
+            </div>
+            <h3>Rotate to Landscape</h3>
+            <p>macOS Web OS is engineered for an authentic desktop display. Please turn your device horizontally or tap below for fullscreen.</p>
+            <button id="btn-force-landscape" class="rotate-action-btn">
+                <i class="fa-solid fa-expand"></i> Enter Fullscreen & Landscape
+            </button>
         </div>
     </div>
 

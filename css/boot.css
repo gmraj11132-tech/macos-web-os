@@ -45,3 +45,35 @@
 .hidden {
   display: none !important;
 }
+
+.boot-fullscreen-hint {
+  position: absolute;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.12);
+  padding: 8px 18px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: pulseHint 2.4s infinite ease-in-out;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.boot-fullscreen-hint:hover {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+@keyframes pulseHint {
+  0%, 100% { opacity: 0.6; transform: translateY(0); }
+  50% { opacity: 0.95; transform: translateY(-3px); }
+}
+

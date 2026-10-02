@@ -105,3 +105,45 @@
   50% { transform: translateY(0); }
   70% { transform: translateY(-8px); }
 }
+
+/* Mobile Landscape Scaling for Dock */
+@media screen and (max-height: 520px) {
+  #dock-container {
+    bottom: 3px;
+    max-width: 98vw;
+  }
+  #dock {
+    padding: 2px 4px;
+    gap: 2px;
+    border-radius: 12px;
+  }
+  .dock-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    border-radius: 7px;
+  }
+  .dock-separator {
+    height: 22px;
+    margin: 0 2px;
+  }
+  .dock-dot {
+    margin-top: 1px;
+    width: 3px;
+    height: 3px;
+  }
+}
+
+@media screen and (max-width: 800px) and (min-height: 521px) {
+  .dock-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    border-radius: 9px;
+  }
+  #dock {
+    padding: 4px 6px;
+    gap: 3px;
+  }
+}
+

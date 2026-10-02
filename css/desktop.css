@@ -91,3 +91,26 @@
   padding: 2px 4px;
   border-radius: 4px;
 }
+
+@media screen and (max-height: 520px) {
+  #desktop-icons {
+    top: 24px;
+    right: 8px;
+    gap: 4px;
+  }
+  .desktop-icon-item {
+    width: 62px;
+    padding: 2px;
+  }
+  .desktop-icon-img {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    border-radius: 7px;
+    margin-bottom: 2px;
+  }
+  .desktop-icon-label {
+    font-size: 9px;
+  }
+}
+

@@ -185,3 +185,27 @@
   z-index: 8200;
   padding: 12px;
 }
+
+/* Mobile Landscape Scaling for Windows */
+@media screen and (max-height: 520px) {
+  #window-container {
+    top: 22px;
+    bottom: 45px;
+  }
+  .window {
+    min-width: 250px;
+    min-height: 160px;
+    max-width: 96vw !important;
+    max-height: calc(100vh - 55px) !important;
+  }
+  .window-titlebar {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 8px;
+  }
+  .traffic-light {
+    width: 10px;
+    height: 10px;
+  }
+}
+
